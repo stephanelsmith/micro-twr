@@ -1,19 +1,19 @@
 
-import asyncio
+from machine import Pin
 from micropython import const
 
-from machine import UART
-from machine import Pin
+from .defs import SA868_PD
 
-class SA868():
-    def __init__(self, ):
-        self.uart = None
+class SA868Pwr():
+    def __init__(self):
+		self.sa868_pd   = Pin(SA868_PD, Pin.OUT)
+		self.sa868_pd.value(0)
 
     async def start(self):
-        self.uart = UART(1, 9600, tx=_SA868_RX, rx=_SA868_TX)
+		self.sa868_pd.value(1)
 
     async def stop(self, verbose=False):
-        pass
+		self.sa868_pd.value(0)
 
     async def __aenter__(self):
         try:
@@ -25,9 +25,4 @@ class SA868():
 
     async def __aexit__(self, *args):
         await self.stop()
-
-    async def rx_coro(self):
-        pass
-    async def tx_coro(self):
-        pass
 
