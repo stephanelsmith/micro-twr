@@ -25,32 +25,43 @@ async def gc_coro():
         sys.print_exception(err)
 
 async def sa868_tx_coro(sa868_uart):
-    read_stdin = asyncio.StreamReader(sys.stdin)
+    read_stdin = asyncio.StreamReader(sys.stdin.buffer)
+    sys.stdout.buffer.write(b'> ')
+    c = bytearray()
     while True:
-        r = await read_stdin.readline()
-        sa868_uart.write(r)
+        b = await read_stdin.read(1)
+        sys.stdout.buffer.write(b)
+        c += b
+        if b == b'\n':
+            sa868_uart.write(c)
+            sys.stdout.buffer.write(b'> ')
+            c = bytearray()
 
 async def sa868_rx_coro(sa868_uart):
     read_sa868 = asyncio.StreamReader(sa868_uart)
     while True:
         r = await read_sa868.readline()
-        sys.stdout.write(r)
+        sys.stdout.buffer.write(b'< ')
+        sys.stdout.buffer.write(r)
 
 async def start():
     try:
         gc_task = asyncio.create_task(gc_coro())
 
         # radio to connect to mic esp
-		self.mic_ch_sel = Pin(_MIC_CH_SEL, Pin.OUT)
-		self.mic_ch_sel.value(1)
+        mic_ch_sel = Pin(_MIC_CH_SEL, Pin.OUT)
+        mic_ch_sel.value(1)
 
+        print('sa868 powering on')
         async with SA868Pwr():
             tasks = []
+            print('uart')
             sa868_uart = UART(1, 9600, 
                               tx = sa868_defs.SA868_RX, 
                               rx = sa868_defs.SA868_TX)
             tasks.append(asyncio.create_task(sa868_tx_coro(sa868_uart)))
             tasks.append(asyncio.create_task(sa868_rx_coro(sa868_uart)))
+            print('gather')
             await asyncio.gather(*tasks)
 
     finally:
