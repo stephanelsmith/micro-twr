@@ -10,7 +10,10 @@ python -m esptool --chip esp32s2 --port COM7 --baud 921600 write_flash 0x1000 mi
 python -m serial.tools.miniterm COM10
 
 
-python -m esptool --chip esp32s3 --port COM9 write_flash -z 0 micropython/ports/esp32/build-LILYGO_T_TWR/firmware.bin
-python -m serial.tools.miniterm COM10
+python -m esptool --chip esp32s3 --port COM12 write_flash -z 0 micropython/ports/esp32/build-LILYGO_T_TWR/firmware.bin
+python -m serial.tools.miniterm COM11
 
+AT+DMOSETGROUP=1,144.3900,144.3900,1,0000
+AT+DMOSETGROUP=1,144.3900,144.3900,0,0000
+AT+DMOSETVOLUME=8
 

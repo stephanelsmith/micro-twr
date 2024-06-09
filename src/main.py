@@ -13,6 +13,9 @@ import sa868.defs as sa868_defs
 
 # lilygo-twr specific pin
 _MIC_CH_SEL  = const(17)     # mic channel select, 0->mic, 1->esp
+_AUDIO  = const(1)
+_PTT    = const(41)
+_HL    = const(38)
 
 async def gc_coro():
     try:
@@ -49,8 +52,16 @@ async def start():
         gc_task = asyncio.create_task(gc_coro())
 
         # radio to connect to mic esp
-        mic_ch_sel = Pin(_MIC_CH_SEL, Pin.OUT)
-        mic_ch_sel.value(1)
+        mic_ch_sel = Pin(_MIC_CH_SEL, Pin.OUT, value=0)
+
+        # high-z audio in pin
+        audio_in = Pin(_AUDIO, Pin.IN, pull=None)
+
+        # set to rx
+        ptt = Pin(_PTT, Pin.OUT, value=1)
+
+        # set h/l
+        hl = Pin(_HL, Pin.OUT, value=0)
 
         print('sa868 powering on')
         async with SA868Pwr():
