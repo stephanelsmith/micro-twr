@@ -10,10 +10,102 @@ python -m esptool --chip esp32s2 --port COM7 --baud 921600 write_flash 0x1000 mi
 python -m serial.tools.miniterm COM10
 
 
-python -m esptool --chip esp32s3 --port COM12 write_flash -z 0 micropython/ports/esp32/build-LILYGO_T_TWR/firmware.bin
-python -m serial.tools.miniterm COM11
+py -m esptool --chip esp32s3 --port COM11 write_flash -z 0 micropython/ports/esp32/build-LILYGO_T_TWR/firmware.bin
+py -m serial.tools.miniterm COM15
 
-AT+DMOSETGROUP=1,144.3900,144.3900,1,0000
-AT+DMOSETGROUP=1,144.3900,144.3900,0,0000
-AT+DMOSETVOLUME=8
+AT+DMOCONNECT
+AT+DMOSETGROUP=1,144.4000,144.4000,0000,1,0000
+AT+DMOSETGROUP=1,145.0000,145.0000,0000,1,0000
+AT+DMOSETVOLUME=1
+
+S+144.4000
+
+
+import machine
+from micropython import const
+_I2C_SCA = 8
+_I2C_SCL = 9
+i2c = machine.I2C(0, scl = machine.Pin(_I2C_SCL), sda  = machine.Pin(_I2C_SCA), freq=400000)
+i2c.scan()
+
+
+from xpower.AXP2101 import AXP2101
+from xpower.AXP2101 import AXP2101_SLAVE_ADDRESS
+import time
+
+#  Set the minimum common working voltage of the PMU VBUS input,
+#  below this value will turn off the PMU
+PMU.setVbusVoltageLimit(PMU.XPOWERS_AXP2101_VBUS_VOL_LIM_4V36)
+
+#  Set the maximum current of the PMU VBUS input,
+#  higher than this value will turn off the PMU
+PMU.setVbusCurrentLimit(PMU.XPOWERS_AXP2101_VBUS_CUR_LIM_1500MA)
+
+#  Get the VSYS shutdown voltage
+vol = PMU.getSysPowerDownVoltage()
+print('->  getSysPowerDownVoltage:%u' % vol)
+
+#  Set VSY off voltage as 2600mV, Adjustment range 2600mV ~ 3300mV
+PMU.setSysPowerDownVoltage(2600)
+
+vol = PMU.getSysPowerDownVoltage()
+print('->  getSysPowerDownVoltage:%u' % vol)
+
+# DC3 Radio & Pixels VDD , Don't change
+PMU.setDC3Voltage(3400);
+
+# ALDO2 MICRO TF Card VDD, Don't change
+PMU.setALDO2Voltage(3300);
+
+# ALDO4 GNSS VDD, Don't change
+PMU.setALDO4Voltage(3300);
+
+# BLDO1 MIC VDD, Don't change
+PMU.setBLDO1Voltage(3300);
+
+# The following supply voltages can be controlled by the user
+# DC5 IMAX=2A
+# 1200mV
+# 1400~3700mV,100mV/step,24steps
+PMU.setDC5Voltage(3300);
+
+# ALDO1 IMAX=300mA
+# 500~3500mV, 100mV/step,31steps
+PMU.setALDO1Voltage(3300);
+
+# ALDO3 IMAX=300mA
+# 500~3500mV, 100mV/step,31steps
+PMU.setALDO3Voltage(3300);
+
+# BLDO2 IMAX=300mA
+# 500~3500mV, 100mV/step,31steps
+PMU.setBLDO2Voltage(3300);
+
+
+# External pin power supply
+PMU.enableDC5();
+PMU.enableALDO1();
+PMU.enableALDO3();
+PMU.enableBLDO2();
+
+# ALDO2 MICRO TF Card VDD
+PMU.enableALDO2();
+
+# ALDO4 GNSS VDD
+PMU.enableALDO4();
+
+# BLDO1 MIC VDD
+PMU.enableBLDO1();
+
+# DC3 Radio & Pixels VDD
+PMU.enableDC3();
+
+# power off when not in use
+PMU.disableDC2();
+PMU.disableDC4();
+PMU.disableCPUSLDO();
+PMU.disableDLDO1();
+PMU.disableDLDO2();
+
+
 

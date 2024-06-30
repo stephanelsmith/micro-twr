@@ -13,9 +13,6 @@ import sa868.defs as sa868_defs
 
 # lilygo-twr specific pin
 _MIC_CH_SEL  = const(17)     # mic channel select, 0->mic, 1->esp
-_AUDIO  = const(1)
-_PTT    = const(41)
-_HL    = const(38)
 
 async def gc_coro():
     try:
@@ -28,6 +25,11 @@ async def gc_coro():
         sys.print_exception(err)
 
 async def sa868_tx_coro(sa868_uart):
+
+    ptt = Pin(sa868_defs.PTT, Pin.OUT, value=1)
+    pd = Pin(sa868_defs.PD, Pin.OUT, value=1)
+    hl = Pin(sa868_defs.HL_POWER, Pin.OUT, value=1)
+
     read_stdin = asyncio.StreamReader(sys.stdin.buffer)
     sys.stdout.buffer.write(b'> ')
     c = bytearray()
@@ -36,7 +38,17 @@ async def sa868_tx_coro(sa868_uart):
         sys.stdout.buffer.write(b)
         c += b
         if b == b'\n':
-            sa868_uart.write(c)
+            if c[:3] == b'ptt':
+                ptt.value(not ptt.value())
+                print('ptt:{} is_tx:{}'.format(ptt.value(), ptt.value() == 0))
+            elif c[:2] == b'pd':
+                pd.value(not pd.value())
+                print('pd:{}'.format(pd.value()))
+            elif c[:2] == b'hl':
+                hl.value(not hl.value())
+                print('hl:{}'.format(hl.value()))
+            else:
+                sa868_uart.write(c)
             sys.stdout.buffer.write(b'> ')
             c = bytearray()
 
@@ -55,21 +67,15 @@ async def start():
         mic_ch_sel = Pin(_MIC_CH_SEL, Pin.OUT, value=0)
 
         # high-z audio in pin
-        audio_in = Pin(_AUDIO, Pin.IN, pull=None)
-
-        # set to rx
-        ptt = Pin(_PTT, Pin.OUT, value=1)
-
-        # set h/l
-        hl = Pin(_HL, Pin.OUT, value=0)
+        audio_in = Pin(sa868_defs.AUDIO_SPEAKER, Pin.IN, pull=None)
 
         print('sa868 powering on')
         async with SA868Pwr():
             tasks = []
             print('uart')
             sa868_uart = UART(1, 9600, 
-                              tx = sa868_defs.SA868_RX, 
-                              rx = sa868_defs.SA868_TX)
+                              tx = sa868_defs.RX, 
+                              rx = sa868_defs.TX)
             tasks.append(asyncio.create_task(sa868_tx_coro(sa868_uart)))
             tasks.append(asyncio.create_task(sa868_rx_coro(sa868_uart)))
             print('gather')

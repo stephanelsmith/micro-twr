@@ -2,11 +2,11 @@
 from machine import Pin
 from micropython import const
 
-from .defs import SA868_PD
+from .defs import PD
 
 class SA868Pwr():
     def __init__(self):
-		self.sa868_pd   = Pin(SA868_PD, Pin.OUT)
+		self.sa868_pd   = Pin(PD, Pin.OUT)
 		self.sa868_pd.value(0)
 
     async def start(self):
